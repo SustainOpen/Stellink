@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, Sparkles, BookOpen } from "lucide-react";
+import { LayoutGrid, Sparkles } from "lucide-react";
 import WalletButton from "@/components/WalletButton";
 
 const Header: React.FC = () => {
@@ -53,15 +53,6 @@ const Header: React.FC = () => {
               </Link>
             );
           })}
-          <a
-            href="https://github.com/paybeam/paybeam#readme"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BookOpen className="h-3.5 w-3.5" />
-            Docs
-          </a>
         </nav>
 
         <WalletButton />
