@@ -2,7 +2,7 @@
 
 # PayBeam
 
-**Send a payment link. Get paid in seconds.**
+**Sharable Stellar payment links for everyday use. Charge once, charge forever, or hold funds in escrow until both sides are happy.**
 
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-22d3ee?style=flat-square)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Soroban-Rust-14b8a6?style=flat-square)](https://soroban.stellar.org)
