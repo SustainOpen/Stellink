@@ -50,14 +50,13 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.05 }}
             className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.05] text-foreground"
           >
-            Charge once, charge forever, or{" "}
+            Stop wiring up checkouts.{" "}
             <span className="relative inline-block">
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                hold it in escrow
+                Send a link.
               </span>
               <span className="absolute -bottom-1 left-0 right-0 h-[2px] beam-glow rounded-full opacity-70" />
             </span>
-            .
           </motion.h1>
 
           <motion.p
@@ -66,10 +65,9 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.15 }}
             className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed"
           >
-            Sharable Stellar payment links for everyday use. Drop one on an
-            invoice, a checkout page, or a DM — anyone can open it, tap pay, and
-            the funds land directly in your wallet. No integration. No
-            custodian. No back-and-forth.
+            PayBeam turns your Stellar address into a payment URL — for invoices
+            you'd normally chase, subscriptions you'd normally build, and trades
+            you'd normally argue over. Same five-second settlement on every one.
           </motion.p>
 
           <motion.div

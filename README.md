@@ -2,7 +2,9 @@
 
 # PayBeam
 
-**Sharable Stellar payment links for everyday use. Charge once, charge forever, or hold funds in escrow until both sides are happy.**
+**Stop wiring up checkouts. Send a link.**
+
+PayBeam turns your Stellar address into a payment URL — for invoices you'd normally chase, subscriptions you'd normally build, and trades you'd normally argue over. Same five-second settlement on every one.
 
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-22d3ee?style=flat-square)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Soroban-Rust-14b8a6?style=flat-square)](https://soroban.stellar.org)
@@ -12,9 +14,9 @@
 
 ---
 
-PayBeam turns a Stellar address into a sharable link. Drop the link on an invoice, a checkout page, or a DM — anyone can open it, tap pay, and the funds settle on-chain in five seconds. No checkout flow to integrate. No custodian. No back-and-forth.
+No API key. No checkout SDK. No custodian. The link itself is the integration — paste it on a website, in an email, in a DM, on a QR sticker — and anyone with a Stellar wallet can pay.
 
-It works in three flavours, picked when you create the link:
+The link works in three modes, picked when you create it:
 
 - **One-time** — a single fixed payment. Closes itself after it's paid. Good for invoices, tips, donations.
 - **Recurring** — accepts unlimited payments on the same URL. Good for tip jars, storefront checkout, subscription handles.
