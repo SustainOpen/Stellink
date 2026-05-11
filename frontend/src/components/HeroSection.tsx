@@ -2,6 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Shield, Repeat, Sparkles } from "lucide-react";
 import { STELLAR_NETWORK } from "@/lib/configAddress";
+import { useWallet } from "@/lib/walletContext";
+import { shortenAddress } from "@/lib/types";
 
 const capabilities = [
   {
@@ -23,6 +25,7 @@ const capabilities = [
 
 const HeroSection: React.FC = () => {
   const networkLabel = STELLAR_NETWORK === "public" ? "Mainnet" : "Testnet";
+  const { publicKey } = useWallet();
 
   return (
     <section className="relative beam-rays mb-12">
@@ -81,14 +84,21 @@ const HeroSection: React.FC = () => {
               Create your first link
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
-            <a
-              href="https://www.freighter.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl beam-outline px-5 py-2.5 text-sm font-semibold"
-            >
-              Get Freighter
-            </a>
+            {publicKey ? (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-2.5 text-xs font-medium text-primary font-mono">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary beam-pulse" />
+                {shortenAddress(publicKey, 6)}
+              </span>
+            ) : (
+              <a
+                href="https://www.freighter.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl beam-outline px-5 py-2.5 text-sm font-semibold"
+              >
+                Get Freighter
+              </a>
+            )}
           </motion.div>
 
           <motion.div
