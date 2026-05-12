@@ -36,6 +36,9 @@ import {
   buildCreateClaimableBalanceXdr,
   buildClaimXdr,
   extractClaimableBalanceId,
+  accountHasTrustline,
+  buildClaimWithTrustlineXdr,
+  getAsset,
 } from "@/lib/stellar";
 import {
   shortenAddress,
@@ -49,6 +52,8 @@ import {
   isEscrowTimedOut,
   getEscrowRole,
   TOKEN_LABELS,
+  HORIZON_ERROR_CODES,
+  isHorizonError,
 } from "@/lib/types";
 import type { PaymentLink, EscrowRole } from "@/lib/types";
 import { explorerTxUrl, explorerClaimableBalanceUrl } from "@/lib/configAddress";
@@ -237,6 +242,30 @@ const LinkDetail: React.FC = () => {
       return;
     }
 
+    // Trustline check for USDC payments
+    if (link.tokenType === "USDC") {
+      const asset = getAsset("USDC");
+      const hasTrustline = await accountHasTrustline(link.recipient, asset);
+      if (!hasTrustline) {
+        if (walletAddress === link.recipient) {
+          toast({
+            title: "Trustline Required",
+            description:
+              "You need to add a USDC trustline before you can receive this payment. Open your wallet and enable USDC.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Recipient Not Ready",
+            description:
+              "Recipient has not set up USDC. Ask them to enable USDC in their wallet before sending.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const xdr = await buildPaymentXdr({
@@ -265,11 +294,21 @@ const LinkDetail: React.FC = () => {
       });
       setCustomAmount("");
     } catch (err) {
-      toast({
-        title: "Transaction failed",
-        description: err instanceof Error ? err.message : "Unknown error",
-        variant: "destructive",
-      });
+      // Surface a friendlier message for op_no_trust failures
+      if (isHorizonError(err, HORIZON_ERROR_CODES.OP_NO_TRUST)) {
+        toast({
+          title: "Recipient Trustline Missing",
+          description:
+            "Recipient has not set up USDC. Ask them to enable USDC in their wallet.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Transaction failed",
+          description: err instanceof Error ? err.message : "Unknown error",
+          variant: "destructive",
+        });
+      }
     } finally {
       setActionLoading(false);
     }
@@ -334,6 +373,43 @@ const LinkDetail: React.FC = () => {
       });
       return;
     }
+
+    // Trustline check for USDC claims — bundle changeTrust if needed
+    if (link.tokenType === "USDC") {
+      const asset = getAsset("USDC");
+      const hasTrustline = await accountHasTrustline(publicKey, asset);
+      if (!hasTrustline) {
+        setActionLoading(true);
+        try {
+          const xdr = await buildClaimWithTrustlineXdr({
+            source: publicKey,
+            balanceId: link.claimableBalanceId,
+            asset,
+          });
+          const hash = await signAndSubmit(xdr);
+          setTxSig(hash);
+          await updateLinkStatus(link.id, "released", {
+            releasedAt: new Date().toISOString(),
+            txSignature: hash,
+          });
+          loadLink();
+          toast({
+            title: "Trustline added & funds claimed",
+            description: `USDC trustline created and ${link.amount} USDC claimed. Tx: ${shortenAddress(hash, 6)}`,
+          });
+        } catch (err) {
+          toast({
+            title: "Claim failed",
+            description: err instanceof Error ? err.message : "Unknown error",
+            variant: "destructive",
+          });
+        } finally {
+          setActionLoading(false);
+        }
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const xdr = await buildClaimXdr({
@@ -349,11 +425,21 @@ const LinkDetail: React.FC = () => {
       loadLink();
       toast({ title: "Funds claimed", description: `Tx: ${shortenAddress(hash, 6)}` });
     } catch (err) {
-      toast({
-        title: "Claim failed",
-        description: err instanceof Error ? err.message : "Unknown error",
-        variant: "destructive",
-      });
+      // Surface a friendlier message for op_no_trust failures
+      if (isHorizonError(err, HORIZON_ERROR_CODES.OP_NO_TRUST)) {
+        toast({
+          title: "Trustline Required",
+          description:
+            "You need a USDC trustline to claim this balance. Enable USDC in your wallet first.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Claim failed",
+          description: err instanceof Error ? err.message : "Unknown error",
+          variant: "destructive",
+        });
+      }
     } finally {
       setActionLoading(false);
     }

@@ -230,3 +230,33 @@ export function isEscrowTimedOut(link: PaymentLink): boolean {
   const deadline = new Date(link.fundedAt).getTime() + link.timeoutSeconds * 1000;
   return Date.now() >= deadline;
 }
+
+/* ============================================================
+   Horizon error helpers — used by the payment flow to decode
+   Stellar transaction result codes into user-friendly messages.
+   ============================================================ */
+
+/** Known Horizon transaction result codes. */
+export const HORIZON_ERROR_CODES = {
+  /** The destination account does not trust the asset being sent. */
+  OP_NO_TRUST: "op_no_trust",
+} as const;
+
+/**
+ * Check whether a caught error matches a specific Horizon transaction
+ * result code. Horizon surfaces result codes inside the error message
+ * string on failed submissions.
+ *
+ * @example
+ *   try { await submitSignedXdr(xdr); } catch (err) {
+ *     if (isHorizonError(err, HORIZON_ERROR_CODES.OP_NO_TRUST)) {
+ *       // Handle missing trustline
+ *     }
+ *   }
+ */
+export function isHorizonError(err: unknown, code: string): boolean {
+  if (err instanceof Error) {
+    return err.message.toLowerCase().includes(code.toLowerCase());
+  }
+  return false;
+}
