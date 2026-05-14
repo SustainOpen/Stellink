@@ -1,0 +1,49 @@
+name: PR welcome
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post review instructions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '### Welcome — a few quick steps before review',
+              '',
+              '**1. Confirm you were assigned the issue this PR closes.**',
+              'PRs from unassigned contributors are closed without review. If you skipped that step, please comment on the issue first and wait for a maintainer to assign you. See [CONTRIBUTING.md](https://github.com/SustainOpen/Stellink/blob/main/CONTRIBUTING.md#onboarding-how-to-make-your-first-contribution).',
+              '',
+              '**2. Run the AI reviewer.**',
+              'This repo uses an automated reviewer. Before a human maintainer looks at your PR, aim for **Confidence Score: 5/5** with **zero unresolved threads**.',
+              '',
+              'Trigger it by commenting:',
+              '',
+              '```',
+              '@greptile review',
+              '```',
+              '',
+              'Give it ~5–10 minutes, fix the feedback, and re-trigger by commenting `@greptile review` again. Repeat until you reach 5/5.',
+              '',
+              '> If the reviewer doesn\'t respond within 15 minutes the integration may not be configured on this fork yet — leave a comment and a maintainer will assist.',
+              '',
+              '**3. Wait for the green CI checks.**',
+              'Build + lint must be green before review. Click the "Checks" tab to see status.',
+              '',
+              '**4. A maintainer will review once steps 1–3 are done.**',
+              'We aim for 7 days. Thanks for contributing to Stellink.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });

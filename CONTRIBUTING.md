@@ -2,17 +2,26 @@
 
 Thanks for considering a contribution. Stellink is a small, focused codebase — the goal is to keep it that way.
 
-## Ground rules
+## Onboarding: how to make your first contribution
 
-- **Pick an issue first.** Open work lives on the [issue tracker](https://github.com/SustainOpen/Stellink/issues). Comment on the one you want to tackle so we can avoid double-up.
-- **Keep PRs scoped.** One concern per PR. If a refactor finds a bug, open a separate PR for the fix.
-- **Match the existing code style.** TypeScript strict, no `any` unless commented, ESLint passes, Tailwind utility classes only, no emojis in source unless asked.
-- **Tests for contract changes.** Anything inside `contracts/` ships with `cargo test` coverage. Frontend has no test harness yet — see [ROADMAP.md](./ROADMAP.md) if you want to lay one down.
+Stellink uses a **claim → assign → code → review** flow. PRs that skip the claim step are closed without review. The flow protects both contributors (no two people work on the same thing) and the project (no surprise drive-by patches).
 
-## Branch + PR workflow
+### 1. Pick an issue
+
+Browse the [issue tracker](https://github.com/SustainOpen/Stellink/issues) and look for one labelled [`good first issue`](https://github.com/SustainOpen/Stellink/labels/good%20first%20issue) or [`help wanted`](https://github.com/SustainOpen/Stellink/labels/help%20wanted). Read it end-to-end — every issue lists the files to touch and explicit acceptance criteria.
+
+### 2. Ask to be assigned
+
+Comment on the issue saying you want to take it. Something like *"I'd like to work on this, please assign me."* is enough. A maintainer assigns within ~24 hours.
+
+**Do not start coding before you're assigned.** Assignment is what reserves the work — it's how we prevent three near-identical PRs racing to merge against the same issue. PRs from contributors who weren't assigned will be closed with a polite note redirecting them to the queue.
+
+If an issue is already assigned but the assignee hasn't pushed anything in 7 days, comment asking if they're still active. Maintainers unassign stale claims so the next contributor can pick them up.
+
+### 3. Code on a feature branch
 
 ```bash
-# Fork + clone, then:
+# Fork the repo, then on your fork:
 git checkout -b feat/<short-slug>
 # ... make changes ...
 npm run lint
@@ -21,37 +30,67 @@ git commit -m "feat(escrow): handle USDC trustline auto-creation"
 git push -u origin feat/<short-slug>
 ```
 
-Open a PR against `main` with:
+Use **Conventional Commits** for the title: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`.
 
-- A short summary of **what** changed and **why**.
-- A note on testing — what you ran, what you observed.
-- Screenshots for any user-visible UI change.
+**Do not push to `main`** on your fork. Always work on a feature branch.
 
-We use **Conventional Commits** for the title (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`).
+### 4. Open the PR and run the AI review
+
+When you open a PR, our GitHub Action posts a short comment with the AI review command. To pass review, you need to:
+
+1. Trigger the AI reviewer by commenting `@greptile review` (or whichever bot is configured — the welcome comment tells you exactly which).
+2. Wait 5–10 minutes for the review to come back.
+3. Address every comment until the reviewer reports **Confidence Score: 5/5** with **zero unresolved threads**.
+4. Re-trigger after each round of changes by commenting `@greptile review` again.
+
+Only PRs at 5/5 are queued for human maintainer review. This isn't bureaucracy — it catches 80% of the easy review feedback before a human spends time on it, so your PR gets merged faster.
+
+### 5. Maintainer review
+
+Once the AI reviewer is happy and CI is green (build + lint + tests pass), a maintainer does a final read. We aim to respond within 7 days. Maintainers either approve and merge, request specific changes, or — rarely — close with a rationale.
+
+Your first merged PR earns you faster review on subsequent PRs.
+
+## Ground rules
+
+- **One concern per PR.** If a refactor uncovers a bug, open a separate PR for the fix.
+- **Match the existing code style.** TypeScript strict, no `any` unless commented, ESLint passes, Tailwind utility classes only, no emojis in source unless asked.
+- **Tests for contract changes.** Anything inside `contracts/` ships with `cargo test` coverage. Frontend tests use Vitest (when the harness lands — see [issue #4](https://github.com/SustainOpen/Stellink/issues/4)).
+- **Screenshots for visible changes.** Any change that touches the UI needs a before/after screenshot or a short Loom in the PR description.
+- **Build must be green.** PRs with red CI checks won't be reviewed until they're green.
+
+## What gets a PR closed without merge
+
+- Submitted without being assigned to the issue.
+- Doesn't follow the PR template.
+- Reads as AI-generated boilerplate with no real engagement (we can tell — please don't waste your time or ours).
+- Closes an issue the author wasn't working on.
+- Includes secrets, unrelated dependencies, or sweeping reformat changes.
+- Build is red and the author isn't responding to the AI reviewer.
 
 ## Local setup checklist
 
-| Step                                | Command                       |
-|-------------------------------------|-------------------------------|
-| Install deps                        | `npm install`                 |
-| Start PocketBase                    | `npm run pb:setup` *or* `npm run pb:up` |
-| Start dev server                    | `npm run dev`                 |
-| Build frontend                      | `npm run build`               |
-| Lint                                | `npm run lint`                |
-| Build Soroban contract              | `npm run contracts:build`     |
-| Test Soroban contract               | `npm run contracts:test`      |
+| Step                       | Command                                 |
+|----------------------------|-----------------------------------------|
+| Install deps               | `npm install`                           |
+| Start PocketBase           | `npm run pb:setup` *or* `npm run pb:up` |
+| Start dev server           | `npm run dev`                           |
+| Build frontend             | `npm run build`                         |
+| Lint                       | `npm run lint`                          |
+| Build Soroban contract     | `npm run contracts:build`               |
+| Test Soroban contract      | `npm run contracts:test`                |
 
 ## Architecture cheatsheet
 
-| Layer                | Where                                        |
-|----------------------|----------------------------------------------|
-| Stellar tx builders  | `frontend/src/lib/stellar.ts`                |
-| Network config       | `frontend/src/lib/configAddress.ts`          |
-| Wallet integration   | `frontend/src/hooks/useStellarWallet.ts` + `frontend/src/lib/walletContext.tsx` |
-| PocketBase client    | `frontend/src/lib/pocketbase.ts`             |
-| Data access layer    | `frontend/src/lib/linkStore.ts`              |
-| PocketBase schema    | `scripts/pocketbase-schema.json`             |
-| Soroban contract     | `contracts/stellink-escrow/src/lib.rs`        |
+| Layer                | Where                                                                          |
+|----------------------|--------------------------------------------------------------------------------|
+| Stellar tx builders  | `frontend/src/lib/stellar.ts`                                                  |
+| Network config       | `frontend/src/lib/configAddress.ts`                                            |
+| Wallet integration   | `frontend/src/hooks/useStellarWallet.ts` + `frontend/src/lib/walletContext.tsx`|
+| PocketBase client    | `frontend/src/lib/pocketbase.ts`                                               |
+| Data access layer    | `frontend/src/lib/linkStore.ts`                                                |
+| PocketBase schema    | `scripts/pocketbase-schema.json`                                               |
+| Soroban contract     | `contracts/stellink-escrow/src/lib.rs`                                         |
 
 Read [README.md](./README.md#architecture) before deeper changes.
 
@@ -71,11 +110,11 @@ File an issue with:
 A "maintainer" on this project is anyone with merge rights. Maintainers commit to:
 
 - Triage incoming issues within 7 days
-- Review PRs within 14 days (LGTM, request changes, or close with rationale)
+- Assign claimed issues within 24 hours, unassign stale claims after 7 days
+- Review PRs within 7 days once the AI reviewer is at 5/5
 - Tag releases following [SemVer](https://semver.org/) once we hit `v1.0.0`
-- Keep the dependency tree current — quarterly bump cycle
 
-If you'd like to step up to maintainer, open three meaningful PRs and ask in the discussion.
+If you'd like to step up to maintainer, open three meaningful merged PRs and ask in the discussion tracker.
 
 ## Code of conduct
 
