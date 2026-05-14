@@ -266,6 +266,86 @@ export function isAddress(address: string): boolean {
   }
 }
 
+/* ============================================================
+   Trustline helpers — used by the payment flow to detect
+   missing USDC trustlines before submission.
+   ============================================================ */
+
+/**
+ * Check if an account has a trustline for a given Stellar asset.
+ *
+ * Native (XLM) always returns true — no trustline is required for the
+ * native asset. For issued assets (e.g. USDC), queries the account's
+ * balances via Horizon to check whether a trustline exists.
+ *
+ * Used by the payment flow to detect missing USDC trustlines before
+ * attempting a payment. When the trustline is missing:
+ *  - If the connected wallet is the recipient, the UI prompts to add
+ *    a trustline (optionally bundled with the claim transaction).
+ *  - If the connected wallet is the payer paying someone else, the UI
+ *    surfaces a clear message: "Recipient has not set up USDC."
+ *
+ * @param address - Stellar G... account address
+ * @param asset   - Stellar Asset (native or issued)
+ * @returns true if the trustline exists or the asset is native
+ */
+export async function accountHasTrustline(
+  address: string,
+  asset: Asset
+): Promise<boolean> {
+  if (asset.isNative()) return true;
+  try {
+    const account = await horizon.loadAccount(address);
+    return account.balances.some(
+      (b) =>
+        b.asset_type !== "native" &&
+        b.asset_code === asset.getCode() &&
+        b.asset_issuer === asset.getIssuer()
+    );
+  } catch {
+    // Account may not exist on-chain — definitely no trustline
+    return false;
+  }
+}
+
+/**
+ * Build a transaction that bundles `changeTrust` (to establish a USDC
+ * trustline for the claimant) with `claimClaimableBalance`.
+ *
+ * Used when the recipient tries to claim escrowed USDC but hasn't
+ * established a trustline yet. The two operations execute atomically:
+ * first the trustline is created, then the balance is claimed.
+ *
+ * @param opts.source    - The claimant's Stellar address (G...)
+ * @param opts.balanceId - The claimable balance ID (hex)
+ * @param opts.asset     - The issued asset requiring a trustline
+ * @returns unsigned transaction XDR string
+ */
+export async function buildClaimWithTrustlineXdr(opts: {
+  source: string;
+  balanceId: string;
+  asset: Asset;
+}): Promise<string> {
+  const account = await horizon.loadAccount(opts.source);
+  const builder = new TransactionBuilder(account, {
+    fee: (parseInt(BASE_FEE) * 2).toString(),
+    networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      Operation.changeTrust({
+        asset: opts.asset,
+      })
+    )
+    .addOperation(
+      Operation.claimClaimableBalance({
+        balanceId: opts.balanceId,
+      })
+    )
+    .setTimeout(180);
+
+  return builder.build().toXDR();
+}
+
 // Silence unused import warning when xdr is not referenced directly.
 // (kept available for downstream type consumers)
 export type { xdr };
