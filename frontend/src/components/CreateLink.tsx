@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+// 1. New QR Modal import
+import QrModal from './QrModal';
 import {
   Link2,
   Clock,
@@ -14,6 +16,8 @@ import {
   Repeat,
   CalendarClock,
   Info,
+  QrCode, // Added icon for the action
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +63,9 @@ const CreateLink: React.FC = () => {
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 2. Local state for the QR modal
+  const [showQr, setShowQr] = useState(false);
+
   const validateForm = useCallback((): boolean => {
     setError(null);
     if (!publicKey) {
@@ -92,9 +99,6 @@ const CreateLink: React.FC = () => {
       const expiresAt = expiryMs ? new Date(Date.now() + expiryMs).toISOString() : null;
       const parsedAmount = allowCustomAmount ? 0 : parseFloat(amount);
 
-      // Note: for escrow we don't mint a claimable balance up front. The payer
-      // (creator) funds it from the pay page; that's when the on-chain balance id
-      // is created and persisted back to the link record.
       const nonce =
         linkType === "escrow"
           ? crypto.randomUUID().replace(/-/g, "").slice(0, 16)
@@ -140,6 +144,7 @@ const CreateLink: React.FC = () => {
     setMemo("");
     setError(null);
     setAllowCustomAmount(false);
+    setShowQr(false);
   };
 
   if (createdLink && createdId) {
@@ -167,6 +172,15 @@ const CreateLink: React.FC = () => {
             <p className="font-mono text-sm text-primary break-all">{createdLink}</p>
           </div>
           <div className="flex gap-3 justify-center flex-wrap">
+            {/* Added QR button on the success screen */}
+            <Button
+              onClick={() => setShowQr(true)}
+              variant="outline"
+              className="border-primary/30 text-primary hover:bg-primary/5 font-semibold"
+            >
+              <QrCode className="h-4 w-4 mr-2" />
+              Show QR
+            </Button>
             <Button
               onClick={() => {
                 safeClipboardWrite(createdLink);
@@ -192,6 +206,15 @@ const CreateLink: React.FC = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Render the modal for the success screen */}
+        <QrModal 
+          isOpen={showQr} 
+          onClose={() => setShowQr(false)} 
+          linkUrl={createdLink} 
+          amount={allowCustomAmount ? "Any" : amount} 
+          tokenType={TOKEN_LABELS[tokenType]} 
+        />
       </div>
     );
   }

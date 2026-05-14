@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+// Import the stateless QR Modal component
+import QrModal from './QrModal';
 import {
   Shield,
   Repeat,
@@ -21,6 +23,7 @@ import {
   Send,
   Clock,
   Infinity as InfinityIcon,
+  QrCode, // Added QR icon for the share section
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,6 +173,9 @@ const LinkDetail: React.FC = () => {
   const [txSig, setTxSig] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState("");
 
+  // Manage visibility state for the QR modal
+  const [showQr, setShowQr] = useState(false);
+
   const walletAddress = publicKey;
   const role: EscrowRole = link ? getEscrowRole(link, walletAddress) : "none";
 
@@ -180,12 +186,6 @@ const LinkDetail: React.FC = () => {
       if (isLinkExpired(found) && found.status === "active") {
         await updateLinkStatus(found.id, "expired");
         found.status = "expired";
-      }
-      // Auto-refund timeout: just mark as eligible. Actual on-chain claim still
-      // requires the payer to submit a transaction.
-      if (found.type === "escrow" && found.status === "funded" && isEscrowTimedOut(found)) {
-        // We don't auto-flip to refunded — the chain remains the source of truth.
-        // The payer must claim back; UI surfaces the action.
       }
     }
     setLink(found || null);
@@ -294,7 +294,6 @@ const LinkDetail: React.FC = () => {
       const hash = await signAndSubmit(xdr);
       setTxSig(hash);
 
-      // Pull the resulting claimable balance id so claims can target it later.
       const balanceId = await extractClaimableBalanceId(hash);
 
       await updateLinkStatus(link.id, "funded", {
@@ -320,11 +319,6 @@ const LinkDetail: React.FC = () => {
   };
 
   // ===== Escrow: Release =====
-  // The payer can't directly transfer the claimable balance to the recipient,
-  // but they can prompt the recipient to claim, OR the payer can claim+repay.
-  // Simplest UX: when "release" is clicked by the payer, we mark released and
-  // let the recipient claim. (The recipient's claim predicate is unconditional,
-  // so they can do this anytime — release is essentially a UI state nudge.)
   const handleReleaseEscrow = async () => {
     if (!publicKey || !link || !link.claimableBalanceId) return;
     if (role !== "recipient") {
@@ -360,7 +354,6 @@ const LinkDetail: React.FC = () => {
   };
 
   // ===== Escrow: Refund =====
-  // Payer claims back (only valid after timeout per the predicate).
   const handleRefundEscrow = async () => {
     if (!publicKey || !link || !link.claimableBalanceId) return;
     if (role !== "payer") return;
@@ -952,16 +945,26 @@ const LinkDetail: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Share Link</span>
-              <button
-                onClick={() => {
-                  safeClipboardWrite(link.linkUrl);
-                  toast({ title: "Link copied" });
-                }}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
-              >
-                <Copy className="h-3 w-3" />
-                Copy
-              </button>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowQr(true)}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                  Show QR
+                </button>
+                <button
+                  onClick={() => {
+                    safeClipboardWrite(link.linkUrl);
+                    toast({ title: "Link copied" });
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </button>
+              </div>
             </div>
             <p className="font-mono text-[11px] text-muted-foreground mt-1 break-all">
               {link.linkUrl}
@@ -1014,6 +1017,15 @@ const LinkDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* QR Modal integration */}
+      <QrModal 
+        isOpen={showQr} 
+        onClose={() => setShowQr(false)} 
+        linkUrl={link.linkUrl} 
+        amount={link.amount.toString()} 
+        tokenType={TOKEN_LABELS[link.tokenType]} 
+      />
     </div>
   );
 };

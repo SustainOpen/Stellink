@@ -21,5 +21,11 @@
     "pb:down": "docker compose down",
     "contracts:build": "cd contracts && cargo build --release --target wasm32-unknown-unknown",
     "contracts:test": "cd contracts && cargo test"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6"
   }
 }
