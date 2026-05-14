@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🛠 Want to contribute? Read the onboarding flow first
+    url: https://github.com/SustainOpen/Stellink/blob/main/CONTRIBUTING.md#onboarding-how-to-make-your-first-contribution
+    about: Stellink uses a claim-before-you-code flow. Browse open issues, comment to claim one, wait for assignment, then open a PR.
+  - name: 💬 Have a question?
+    url: https://github.com/SustainOpen/Stellink/discussions
+    about: Use Discussions for questions, design proposals, and anything that isn't a concrete bug or feature.
