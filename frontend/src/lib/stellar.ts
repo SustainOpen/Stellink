@@ -44,7 +44,8 @@ export function getAsset(tokenType: TokenType): Asset {
 /** Format a number to Stellar's 7-decimal string (the SDK only accepts strings) */
 export function toStellarAmount(amount: number): string {
   // Stellar enforces 7 decimal places. Strip extra precision and avoid sci-notation.
-  return amount.toFixed(7);
+  const scaled = Math.trunc(amount * 10_000_000);
+  return (scaled / 10_000_000).toFixed(7);
 }
 
 /** Sum of native lumens balance for an account, or 0 if unfunded */
