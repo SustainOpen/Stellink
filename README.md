@@ -49,6 +49,7 @@ Stellink is opinionated about being **the smallest possible thing that works**. 
 git clone https://github.com/SustainOpen/Stellink.git
 cd stellink
 npm install
+npm run test
 
 # Optional: spin up PocketBase for cross-device link storage.
 # (Skip this and links will be scoped to your local browser.)
