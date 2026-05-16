@@ -22,7 +22,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, BytesN, Env, Symbol, symbol_short,
+    contract, contractimpl, contracttype, contracterror, Address, BytesN, Env, Symbol, symbol_short, String,
 };
 
 #[contract]
@@ -52,7 +52,7 @@ pub struct LinkRecord {
     pub created_at: u64,
     /// Hex-encoded Stellar claimable balance id, or `None` if the link is
     /// non-escrow (one-time / recurring).
-    pub claimable_balance_id: Option<BytesN<36>>,
+    pub claimable_balance_id: Option<String>,
     /// Free-form 32-byte tag the off-chain linker can use (e.g. SHA-256 of
     /// the JSON record).
     pub metadata_hash: BytesN<32>,
@@ -68,7 +68,7 @@ const EVT_REGISTERED: Symbol = symbol_short!("REG");
 /* Errors                                                             */
 /* ------------------------------------------------------------------ */
 
-#[contracttype]
+#[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u32)]
 pub enum Error {
@@ -104,7 +104,7 @@ impl StellinkEscrow {
         env: Env,
         creator: Address,
         link_id: BytesN<32>,
-        claimable_balance_id: Option<BytesN<36>>,
+        claimable_balance_id: Option<String>,
         metadata_hash: BytesN<32>,
     ) -> Result<(), Error> {
         creator.require_auth();
