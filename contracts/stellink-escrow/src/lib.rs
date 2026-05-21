@@ -49,6 +49,7 @@ pub enum DataKey {
 #[contracttype]
 pub struct LinkRecord {
     pub creator: Address,
+    pub recipient: Option<Address>,
     pub created_at: u64,
     /// Hex-encoded Stellar claimable balance id, or `None` if the link is
     /// non-escrow (one-time / recurring).
@@ -56,6 +57,8 @@ pub struct LinkRecord {
     /// Free-form 32-byte tag the off-chain linker can use (e.g. SHA-256 of
     /// the JSON record).
     pub metadata_hash: BytesN<32>,
+    pub appealed: bool,
+    pub decision: u32,
 }
 
 /* ------------------------------------------------------------------ */
@@ -103,6 +106,7 @@ impl StellinkEscrow {
     pub fn register_link(
         env: Env,
         creator: Address,
+        recipient: Option<Address>,
         link_id: BytesN<32>,
         claimable_balance_id: Option<String>,
         metadata_hash: BytesN<32>,
@@ -116,9 +120,12 @@ impl StellinkEscrow {
 
         let record = LinkRecord {
             creator: creator.clone(),
+            recipient,
             created_at: env.ledger().timestamp(),
             claimable_balance_id,
             metadata_hash,
+            appealed: false,
+            decision: 0,
         };
         env.storage().persistent().set(&key, &record);
 
