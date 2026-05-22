@@ -26,13 +26,15 @@ fn init_sets_arbiter() {
 fn register_and_fetch_link() {
     let (env, _, client) = setup();
     let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
     let link_id = BytesN::from_array(&env, &[1u8; 32]);
     let metadata_hash = BytesN::from_array(&env, &[2u8; 32]);
 
-    client.register_link(&creator, &link_id, &None, &metadata_hash);
+    client.register_link(&creator, &Some(recipient.clone()), &link_id, &None, &metadata_hash);
 
     let record = client.get_link(&link_id).expect("link should exist");
     assert_eq!(record.creator, creator);
+    assert_eq!(record.recipient, Some(recipient));
     assert_eq!(record.metadata_hash, metadata_hash);
     assert!(record.claimable_balance_id.is_none());
 }
@@ -45,9 +47,9 @@ fn duplicate_link_rejected() {
     let link_id = BytesN::from_array(&env, &[3u8; 32]);
     let metadata_hash = BytesN::from_array(&env, &[4u8; 32]);
 
-    client.register_link(&creator, &link_id, &None, &metadata_hash);
+    client.register_link(&creator, &None, &link_id, &None, &metadata_hash);
     // Second call with same id must fail.
-    client.register_link(&creator, &link_id, &None, &metadata_hash);
+    client.register_link(&creator, &None, &link_id, &None, &metadata_hash);
 }
 
 #[test]
