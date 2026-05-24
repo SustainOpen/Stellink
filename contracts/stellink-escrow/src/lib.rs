@@ -66,6 +66,8 @@ pub struct LinkRecord {
 /* ------------------------------------------------------------------ */
 
 const EVT_REGISTERED: Symbol = symbol_short!("REG");
+const EVT_APPEALED: Symbol = symbol_short!("APPL");
+const EVT_RESOLVED: Symbol = symbol_short!("RSLV");
 
 /* ------------------------------------------------------------------ */
 /* Errors                                                             */
@@ -144,11 +146,36 @@ impl StellinkEscrow {
         env.storage().instance().get(&DataKey::Arbiter)
     }
 
-    /// **TODO(contributor)** — `appeal_link` should mark a registered link
-    /// as appealed. Either party (creator OR recipient stored elsewhere)
-    /// must be able to call it. See issue #5 (`good-first-issue`).
-    pub fn appeal_link(_env: Env, _link_id: BytesN<32>, _caller: Address) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+    /// Mark a registered link as appealed. Either party (creator OR recipient)
+    /// must be able to call it.
+    pub fn appeal_link(env: Env, link_id: BytesN<32>, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+
+        let key = DataKey::Link(link_id.clone());
+        let mut record: LinkRecord = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .ok_or(Error::LinkNotFound)?;
+
+        if caller == record.creator {
+            // Authorized
+        } else if let Some(ref rec) = record.recipient {
+            if caller == *rec {
+                // Authorized
+            } else {
+                return Err(Error::Unauthorised);
+            }
+        } else {
+            return Err(Error::Unauthorised);
+        }
+
+        record.appealed = true;
+        env.storage().persistent().set(&key, &record);
+
+        env.events().publish((EVT_APPEALED, caller), link_id);
+
+        Ok(())
     }
 
     /// **TODO(contributor)** — `resolve_appeal` should be callable only by
