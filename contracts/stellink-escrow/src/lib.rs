@@ -178,15 +178,33 @@ impl StellinkEscrow {
         Ok(())
     }
 
-    /// **TODO(contributor)** — `resolve_appeal` should be callable only by
-    /// the arbiter and emits a binding decision (release or refund). See
-    /// issue #6.
+    /// Resolve an appealed link. Callable only by the registered arbiter.
+    /// Emits a binding decision (e.g. 1 = release to recipient, 2 = refund to creator).
     pub fn resolve_appeal(
-        _env: Env,
-        _link_id: BytesN<32>,
-        _decision: u32,
+        env: Env,
+        link_id: BytesN<32>,
+        decision: u32,
     ) -> Result<(), Error> {
-        Err(Error::NotImplemented)
+        let arbiter = Self::arbiter(env.clone()).ok_or(Error::Unauthorised)?;
+        arbiter.require_auth();
+
+        let key = DataKey::Link(link_id.clone());
+        let mut record: LinkRecord = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .ok_or(Error::LinkNotFound)?;
+
+        if !record.appealed {
+            return Err(Error::Unauthorised);
+        }
+
+        record.decision = decision;
+        env.storage().persistent().set(&key, &record);
+
+        env.events().publish((EVT_RESOLVED, arbiter), (link_id, decision));
+
+        Ok(())
     }
 }
 
