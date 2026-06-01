@@ -53,10 +53,89 @@ fn duplicate_link_rejected() {
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #100)")]
-fn appeal_is_not_implemented_yet() {
-    let (env, _, client) = setup();
-    let caller = Address::generate(&env);
+fn test_appeal_and_resolve_flow() {
+    let (env, _arbiter, client) = setup();
+    let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
     let link_id = BytesN::from_array(&env, &[5u8; 32]);
-    client.appeal_link(&link_id, &caller);
+    let metadata_hash = BytesN::from_array(&env, &[6u8; 32]);
+
+    client.register_link(&creator, &Some(recipient.clone()), &link_id, &None, &metadata_hash);
+
+    // Creator appeals
+    client.appeal_link(&link_id, &creator);
+
+    let record = client.get_link(&link_id).unwrap();
+    assert!(record.appealed);
+
+    // Arbiter resolves
+    client.resolve_appeal(&link_id, &1);
+
+    let record = client.get_link(&link_id).unwrap();
+    assert_eq!(record.decision, 1);
+}
+
+#[test]
+fn test_appeal_recipient_authorized() {
+    let (env, _, client) = setup();
+    let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let link_id = BytesN::from_array(&env, &[7u8; 32]);
+    let metadata_hash = BytesN::from_array(&env, &[8u8; 32]);
+
+    client.register_link(&creator, &Some(recipient.clone()), &link_id, &None, &metadata_hash);
+
+    // Recipient appeals
+    client.appeal_link(&link_id, &recipient);
+
+    let record = client.get_link(&link_id).unwrap();
+    assert!(record.appealed);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_appeal_unauthorized_caller() {
+    let (env, _, client) = setup();
+    let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let bystander = Address::generate(&env);
+    let link_id = BytesN::from_array(&env, &[9u8; 32]);
+    let metadata_hash = BytesN::from_array(&env, &[10u8; 32]);
+
+    client.register_link(&creator, &Some(recipient), &link_id, &None, &metadata_hash);
+
+    // Bystander attempts to appeal -> should fail (Unauthorised)
+    client.appeal_link(&link_id, &bystander);
+}
+
+#[test]
+#[should_panic]
+fn test_resolve_unauthorized_caller() {
+    let (env, _, client) = setup();
+    let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let link_id = BytesN::from_array(&env, &[11u8; 32]);
+    let metadata_hash = BytesN::from_array(&env, &[12u8; 32]);
+
+    client.register_link(&creator, &Some(recipient), &link_id, &None, &metadata_hash);
+    client.appeal_link(&link_id, &creator);
+
+    // Disable mock auth to verify that require_auth fails without arbiter signature
+    env.mock_auths(&[]);
+    client.resolve_appeal(&link_id, &1);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_resolve_not_appealed() {
+    let (env, _, client) = setup();
+    let creator = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let link_id = BytesN::from_array(&env, &[13u8; 32]);
+    let metadata_hash = BytesN::from_array(&env, &[14u8; 32]);
+
+    client.register_link(&creator, &Some(recipient), &link_id, &None, &metadata_hash);
+
+    // Arbiter attempts to resolve before appeal -> should fail (Unauthorised)
+    client.resolve_appeal(&link_id, &1);
 }
