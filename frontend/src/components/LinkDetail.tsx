@@ -21,7 +21,9 @@ import {
   Send,
   Clock,
   Infinity as InfinityIcon,
+  QrCode,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -169,6 +171,7 @@ const LinkDetail: React.FC = () => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [txSig, setTxSig] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState("");
+  const [showQr, setShowQr] = useState(false);
 
   const walletAddress = publicKey;
   const role: EscrowRole = link ? getEscrowRole(link, walletAddress) : "none";
@@ -952,17 +955,32 @@ const LinkDetail: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Share Link</span>
-              <button
-                onClick={() => {
-                  safeClipboardWrite(link.linkUrl);
-                  toast({ title: "Link copied" });
-                }}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
-              >
-                <Copy className="h-3 w-3" />
-                Copy
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowQr(!showQr)}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                  {showQr ? "Hide QR" : "QR Code"}
+                </button>
+                <button
+                  onClick={() => {
+                    safeClipboardWrite(link.linkUrl);
+                    toast({ title: "Link copied" });
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-emerald-glow transition-colors"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </button>
+              </div>
             </div>
+            {showQr && (
+              <div className="mt-3 flex flex-col items-center justify-center p-4 rounded-xl bg-white border border-border">
+                <QRCodeSVG value={link.linkUrl} size={160} />
+                <p className="text-[10px] text-muted-foreground mt-2 font-medium">Scan to pay with Stellink</p>
+              </div>
+            )}
             <p className="font-mono text-[11px] text-muted-foreground mt-1 break-all">
               {link.linkUrl}
             </p>
