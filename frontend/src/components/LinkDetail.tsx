@@ -54,6 +54,7 @@ import {
 } from "@/lib/types";
 import type { PaymentLink, EscrowRole } from "@/lib/types";
 import { explorerTxUrl, explorerClaimableBalanceUrl } from "@/lib/configAddress";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useWallet } from "@/lib/walletContext";
 
@@ -975,12 +976,42 @@ const LinkDetail: React.FC = () => {
                 </button>
               </div>
             </div>
-            {showQr && (
-              <div className="mt-3 flex flex-col items-center justify-center p-4 rounded-xl bg-white border border-border">
-                <QRCodeSVG value={link.linkUrl} size={160} />
-                <p className="text-[10px] text-muted-foreground mt-2 font-medium">Scan to pay with Stellink</p>
-              </div>
-            )}
+            <AnimatePresence>
+              {showQr && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden mt-3"
+                >
+                  <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-secondary/40 border border-border/80 backdrop-blur-md shadow-2xl relative group">
+                    <div className="absolute inset-0 bg-primary/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {/* QR Code Container with sleek dark border and glow */}
+                    <div className="relative p-3 bg-white rounded-xl shadow-lg border border-border/50">
+                      <QRCodeSVG 
+                        value={link.linkUrl} 
+                        size={180}
+                        fgColor="#0f172a" 
+                        bgColor="#ffffff"
+                        level="H"
+                        includeMargin={false}
+                      />
+                      {/* Premium Scanner Corner Accents */}
+                      <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-primary rounded-tl-sm" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-primary rounded-tr-sm" />
+                      <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-primary rounded-bl-sm" />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-primary rounded-br-sm" />
+                    </div>
+
+                    <p className="text-xs text-foreground font-semibold mt-4">Point of Sale QR Code</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 max-w-[200px] text-center">
+                      Scan this code with a mobile wallet or camera to pay instantly.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <p className="font-mono text-[11px] text-muted-foreground mt-1 break-all">
               {link.linkUrl}
             </p>
