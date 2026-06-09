@@ -38,6 +38,7 @@ import {
   buildCreateClaimableBalanceXdr,
   buildClaimXdr,
   extractClaimableBalanceId,
+  buildRegisterLinkXdr,
 } from "@/lib/stellar";
 import {
   shortenAddress,
@@ -53,7 +54,7 @@ import {
   TOKEN_LABELS,
 } from "@/lib/types";
 import type { PaymentLink, EscrowRole } from "@/lib/types";
-import { explorerTxUrl, explorerClaimableBalanceUrl } from "@/lib/configAddress";
+import { explorerTxUrl, explorerClaimableBalanceUrl, STELLINK_ESCROW_CONTRACT_ID } from "@/lib/configAddress";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useWallet } from "@/lib/walletContext";
@@ -300,6 +301,31 @@ const LinkDetail: React.FC = () => {
 
       // Pull the resulting claimable balance id so claims can target it later.
       const balanceId = await extractClaimableBalanceId(hash);
+
+      // If contract is configured, register the link on-chain in the Soroban contract
+      if (STELLINK_ESCROW_CONTRACT_ID) {
+        try {
+          const registerXdr = await buildRegisterLinkXdr({
+            contractId: STELLINK_ESCROW_CONTRACT_ID,
+            creator: publicKey,
+            recipient: link.recipient,
+            linkId: link.id,
+            claimableBalanceId: balanceId,
+            amount: link.amount,
+            tokenType: link.tokenType,
+            memo: link.memo,
+          });
+          const contractHash = await signAndSubmit(registerXdr);
+          console.log("Soroban register_link success:", contractHash);
+        } catch (contractErr) {
+          console.error("Soroban register_link failed:", contractErr);
+          toast({
+            title: "On-chain indexing failed",
+            description: "Escrow funded but not registered in registry: " + (contractErr instanceof Error ? contractErr.message : "Unknown error"),
+            variant: "destructive",
+          });
+        }
+      }
 
       await updateLinkStatus(link.id, "funded", {
         fundedAt: new Date().toISOString(),

@@ -24,6 +24,8 @@ import {
   Memo,
   Keypair,
   xdr,
+  Contract,
+  nativeToScVal,
 } from "@stellar/stellar-sdk";
 import {
   HORIZON_URL,
@@ -264,6 +266,58 @@ export function isAddress(address: string): boolean {
   } catch {
     return false;
   }
+}
+
+interface BuildRegisterLinkOptions {
+  contractId: string;
+  creator: string;
+  recipient: string | null;
+  linkId: string;
+  claimableBalanceId: string | null;
+  amount: number;
+  tokenType: string;
+  memo: string | null;
+}
+
+/**
+ * Build the Soroban transaction call to register_link on-chain.
+ */
+export async function buildRegisterLinkXdr(opts: BuildRegisterLinkOptions): Promise<string> {
+  const account = await horizon.loadAccount(opts.creator);
+  const contract = new Contract(opts.contractId);
+
+  const encoder = new TextEncoder();
+  const idData = encoder.encode(opts.linkId);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", idData);
+  const linkIdBytes = new Uint8Array(hashBuffer);
+
+  const metaData = encoder.encode(
+    JSON.stringify({
+      amount: opts.amount,
+      tokenType: opts.tokenType,
+      memo: opts.memo,
+    })
+  );
+  const metaHashBuffer = await crypto.subtle.digest("SHA-256", metaData);
+  const metaHashBytes = new Uint8Array(metaHashBuffer);
+
+  const registerOp = contract.call(
+    "register_link",
+    nativeToScVal(opts.creator, { type: "address" }),
+    opts.recipient ? nativeToScVal(opts.recipient, { type: "address" }) : nativeToScVal(null),
+    nativeToScVal(linkIdBytes, { type: "bytes" }),
+    opts.claimableBalanceId ? nativeToScVal(opts.claimableBalanceId, { type: "string" }) : nativeToScVal(null),
+    nativeToScVal(metaHashBytes, { type: "bytes" })
+  );
+
+  return new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
+  })
+    .addOperation(registerOp)
+    .setTimeout(180)
+    .build()
+    .toXDR();
 }
 
 // Silence unused import warning when xdr is not referenced directly.
