@@ -66,50 +66,66 @@ const LinkRow: React.FC<{ link: PaymentLink; walletAddress: string }> = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-          <span className="text-sm font-semibold text-foreground">
-            {link.allowCustomAmount
-              ? `Any ${TOKEN_LABELS[link.tokenType]}`
-              : `${link.amount} ${TOKEN_LABELS[link.tokenType]}`}
-          </span>
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(
-              link.status
-            )}`}
-          >
-            {getStatusLabel(link.status)}
-          </span>
-          <span
-            className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${getTypeColor(
-              link.type
-            )}`}
-          >
-            {getTypeLabel(link.type).toUpperCase()}
-          </span>
+        <div className="flex items-center justify-between gap-2 mb-0.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-foreground">
+              {link.allowCustomAmount
+                ? `Any ${TOKEN_LABELS[link.tokenType]}`
+                : `${link.amount} ${TOKEN_LABELS[link.tokenType]}`}
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(
+                link.status
+              )}`}
+            >
+              {getStatusLabel(link.status)}
+            </span>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${getTypeColor(
+                link.type
+              )}`}
+            >
+              {getTypeLabel(link.type).toUpperCase()}
+            </span>
+          </div>
+          <div className="sm:hidden text-right flex-shrink-0">
+            <p className="text-[10px] text-muted-foreground">
+              {new Date(link.createdAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>
-            {isSender ? "To" : "From"}{" "}
-            <span className="font-mono">
-              {shortenAddress(isSender ? link.recipient : link.creator)}
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span>
+              {isSender ? "To" : "From"}{" "}
+              <span className="font-mono">
+                {shortenAddress(isSender ? link.recipient : link.creator)}
+              </span>
             </span>
-          </span>
+            {link.type === "recurring" && (
+              <span className="flex items-center gap-1">
+                <Coins className="h-3 w-3" />
+                {link.payments?.length || 0} payments
+              </span>
+            )}
+            {link.expiresAt ? (
+              <span className="flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" />
+                {getExpiryLabel(link.expiresAt)}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-primary">
+                <InfinityIcon className="h-3 w-3" />
+                Infinite
+              </span>
+            )}
+          </div>
           {link.type === "recurring" && (
-            <span className="flex items-center gap-1">
-              <Coins className="h-3 w-3" />
-              {link.payments?.length || 0} payments
-            </span>
-          )}
-          {link.expiresAt ? (
-            <span className="flex items-center gap-1">
-              <CalendarClock className="h-3 w-3" />
-              {getExpiryLabel(link.expiresAt)}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-primary">
-              <InfinityIcon className="h-3 w-3" />
-              Infinite
-            </span>
+            <div className="sm:hidden text-right flex-shrink-0">
+              <p className="text-[10px] text-primary font-medium">
+                {link.totalReceived || 0} {TOKEN_LABELS[link.tokenType]}
+              </p>
+            </div>
           )}
         </div>
       </div>
